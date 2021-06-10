@@ -17,5 +17,9 @@
     "bootstrap-vue": "^2.21.2",
     "nuxt": "^2.2.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "mquery": ">=3.2.3",
+    "is-svg": ">=4.2.2",
+    "bson": ">=1.1.4"
+  }
 }
