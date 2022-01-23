@@ -1,4 +1,5 @@
 import Vue from 'vue'
+
 import Meta from 'vue-meta'
 import ClientOnly from 'vue-client-only'
 import NoSsr from 'vue-no-ssr'
@@ -11,10 +12,10 @@ import { setContext, getLocation, getRouteData, normalizeError } from './utils'
 
 /* Plugins */
 
-import nuxt_plugin_workbox_299f3577 from 'nuxt_plugin_workbox_299f3577' // Source: ./workbox.js (mode: 'client')
-import nuxt_plugin_nuxticons_6c9dc70d from 'nuxt_plugin_nuxticons_6c9dc70d' // Source: ./nuxt-icons.js (mode: 'all')
-import nuxt_plugin_bootstrapvue_91a2a36c from 'nuxt_plugin_bootstrapvue_91a2a36c' // Source: ./bootstrap-vue.js (mode: 'all')
-import nuxt_plugin_axios_6da91b1b from 'nuxt_plugin_axios_6da91b1b' // Source: ./axios.js (mode: 'all')
+import nuxt_plugin_workbox_4f9e768d from 'nuxt_plugin_workbox_4f9e768d' // Source: ./workbox.js (mode: 'client')
+import nuxt_plugin_nuxticons_2fd4e637 from 'nuxt_plugin_nuxticons_2fd4e637' // Source: ./nuxt-icons.js (mode: 'all')
+import nuxt_plugin_bootstrapvue_22c246e0 from 'nuxt_plugin_bootstrapvue_22c246e0' // Source: ./bootstrap-vue.js (mode: 'all')
+import nuxt_plugin_axios_6b91a9b1 from 'nuxt_plugin_axios_6b91a9b1' // Source: ./axios.js (mode: 'all')
 
 // Component: <ClientOnly>
 Vue.component(ClientOnly.name, ClientOnly)
@@ -41,11 +42,18 @@ Vue.component('NChild', NuxtChild)
 // Component: <Nuxt>
 Vue.component(Nuxt.name, Nuxt)
 
+Object.defineProperty(Vue.prototype, '$nuxt', {
+  get() {
+    return this.$root.$options.$nuxt
+  },
+  configurable: true
+})
+
 Vue.use(Meta, {"keyName":"head","attribute":"data-n-head","ssrAttribute":"data-n-head-ssr","tagIDKeyName":"hid"})
 
 const defaultTransition = {"name":"page","mode":"out-in","appear":false,"appearClass":"appear","appearActiveClass":"appear-active","appearToClass":"appear-to"}
 
-async function createApp (ssrContext) {
+async function createApp(ssrContext, config = {}) {
   const router = await createRouter(ssrContext)
 
   // Create Root instance
@@ -53,6 +61,8 @@ async function createApp (ssrContext) {
   // here we inject the router and store to all child components,
   // making them available everywhere as `this.$router` and `this.$store`.
   const app = {
+    head: {"title":"admin","meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"hid":"description","name":"description","content":""},{"hid":"mobile-web-app-capable","name":"mobile-web-app-capable","content":"yes"},{"hid":"apple-mobile-web-app-title","name":"apple-mobile-web-app-title","content":"admin"},{"hid":"theme-color","name":"theme-color","content":"#fff"},{"hid":"og:type","name":"og:type","property":"og:type","content":"website"},{"hid":"og:title","name":"og:title","property":"og:title","content":"admin"},{"hid":"og:site_name","name":"og:site_name","property":"og:site_name","content":"admin"}],"link":[{"rel":"icon","type":"image\u002Fx-icon","href":"\u002Ffavicon.ico"},{"rel":"stylesheet","href":"\u002Fcss\u002Ffont-awesome\u002Fcss\u002Fall.css"},{"rel":"stylesheet","href":"\u002Fcss\u002Fdefault.css"},{"rel":"manifest","href":"\u002F_nuxt\u002Fmanifest.fd524db8.json"},{"rel":"shortcut icon","href":"\u002F_nuxt\u002Ficons\u002Ficon_64.5f6a36.png"},{"rel":"apple-touch-icon","href":"\u002F_nuxt\u002Ficons\u002Ficon_512.5f6a36.png","sizes":"512x512"}],"style":[],"script":[],"htmlAttrs":{"lang":"en"}},
+
     router,
     nuxt: {
       defaultTransition,
@@ -81,7 +91,10 @@ async function createApp (ssrContext) {
         err = err || null
         app.context._errored = Boolean(err)
         err = err ? normalizeError(err) : null
-        const nuxt = this.nuxt || this.$options.nuxt
+        let nuxt = app.nuxt // to work with @vue/composition-api, see https://github.com/nuxt/nuxt.js/issues/6517#issuecomment-573280207
+        if (this) {
+          nuxt = this.nuxt || this.$options.nuxt
+        }
         nuxt.dateErr = Date.now()
         nuxt.err = err
         // Used in src/server.js
@@ -116,17 +129,21 @@ async function createApp (ssrContext) {
     ssrContext
   })
 
-  const inject = function (key, value) {
+  function inject(key, value) {
     if (!key) {
       throw new Error('inject(key, value) has no key provided')
     }
     if (value === undefined) {
-      throw new Error('inject(key, value) has no value provided')
+      throw new Error(`inject('${key}', value) has no value provided`)
     }
 
     key = '$' + key
     // Add into app
     app[key] = value
+    // Add into context
+    if (!app.context[key]) {
+      app.context[key] = value
+    }
 
     // Check if plugin not already installed
     const installKey = '__nuxt_' + key + '_installed__'
@@ -136,7 +153,7 @@ async function createApp (ssrContext) {
     Vue[installKey] = true
     // Call Vue.use() to install the plugin into vm
     Vue.use(() => {
-      if (!Object.prototype.hasOwnProperty.call(Vue, key)) {
+      if (!Object.prototype.hasOwnProperty.call(Vue.prototype, key)) {
         Object.defineProperty(Vue.prototype, key, {
           get () {
             return this.$root.$options[key]
@@ -146,30 +163,51 @@ async function createApp (ssrContext) {
     })
   }
 
+  // Inject runtime config as $config
+  inject('config', config)
+
+  // Add enablePreview(previewData = {}) in context for plugins
+  if (process.static && process.client) {
+    app.context.enablePreview = function (previewData = {}) {
+      app.previewData = Object.assign({}, previewData)
+      inject('preview', previewData)
+    }
+  }
   // Plugin execution
 
-  if (process.client && typeof nuxt_plugin_workbox_299f3577 === 'function') {
-    await nuxt_plugin_workbox_299f3577(app.context, inject)
+  if (process.client && typeof nuxt_plugin_workbox_4f9e768d === 'function') {
+    await nuxt_plugin_workbox_4f9e768d(app.context, inject)
   }
 
-  if (typeof nuxt_plugin_nuxticons_6c9dc70d === 'function') {
-    await nuxt_plugin_nuxticons_6c9dc70d(app.context, inject)
+  if (typeof nuxt_plugin_nuxticons_2fd4e637 === 'function') {
+    await nuxt_plugin_nuxticons_2fd4e637(app.context, inject)
   }
 
-  if (typeof nuxt_plugin_bootstrapvue_91a2a36c === 'function') {
-    await nuxt_plugin_bootstrapvue_91a2a36c(app.context, inject)
+  if (typeof nuxt_plugin_bootstrapvue_22c246e0 === 'function') {
+    await nuxt_plugin_bootstrapvue_22c246e0(app.context, inject)
   }
 
-  if (typeof nuxt_plugin_axios_6da91b1b === 'function') {
-    await nuxt_plugin_axios_6da91b1b(app.context, inject)
+  if (typeof nuxt_plugin_axios_6b91a9b1 === 'function') {
+    await nuxt_plugin_axios_6b91a9b1(app.context, inject)
+  }
+
+  // Lock enablePreview in context
+  if (process.static && process.client) {
+    app.context.enablePreview = function () {
+      console.warn('You cannot call enablePreview() outside a plugin.')
+    }
   }
 
   // If server-side, wait for async component to be resolved first
   if (process.server && ssrContext && ssrContext.url) {
     await new Promise((resolve, reject) => {
-      router.push(ssrContext.url, resolve, () => {
+      router.push(ssrContext.url, resolve, (err) => {
+        // https://github.com/vuejs/vue-router/blob/v3.4.3/src/util/errors.js
+        if (!err._isRouter) return reject(err)
+        if (err.type !== 2 /* NavigationFailureType.redirected */) return resolve()
+
         // navigated to a different route in router guard
-        const unregister = router.afterEach(async (to, from, next) => {
+        const unregister = router.afterEach(async (to, from) => {
           ssrContext.url = to.fullPath
           app.context.route = await getRouteData(to)
           app.context.params = to.params || {}

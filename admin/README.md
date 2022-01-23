@@ -1,10 +1,10 @@
 # admin
 
-> My slick Nuxt.js project
+> Nuxt.js project
 
 ## Build Setup
 
-``` bash
+```bash
 # install dependencies
 $ npm run install
 
