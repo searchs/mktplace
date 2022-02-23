@@ -6,42 +6,42 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const User = require('./models/user');
 
-const app = express();
 dotenv.config();
 
-app.use(morgan('dev'))
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({extended: false}));
+const app = express();
+
+app.use(morgan('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
 const productRoute = require('./routes/product');
 const categoryRoute = require('./routes/category');
 const ownerRoute = require('./routes/owner');
 
-app.use("/api", productRoute);
-app.use("/api", categoryRoute);
-app.use("/api", ownerRoute);
+app.use('/api', productRoute);
+app.use('/api', categoryRoute);
+app.use('/api', ownerRoute);
 
-mongoose.connect(process.env.DATABASE, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}, err => {
-    if (err) {
-        console.log(err);
-    } else {
-        console.log("INFO: connected to persistence layer.....");
-    }
+const { MongoClient } = require('mongodb');
+const client = new MongoClient(process.env.DB, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
+client.connect((err) => {
+  const collection = client.db('test').collection('devices');
+  console.log('Connection Status: ESTABLISHED');
+  // perform actions on the collection object
+  client.close();
 });
 
-//return json on '/' with app info
 app.get('/', (req, res) => {
-  res.json({"app": "MarketPlace", "version": "0.0.2", "apiLocation": "/api/"});
+  res.json({ app: 'MarketPlace', version: '0.0.2', apiLocation: '/api/' });
 });
 
-
-app.listen(port, err => {
-    if (err) {
-        console.log(err);
-    } else {
-        console.log(`App running on http://localhost:${port}`);
-    }
+app.listen(port, (err) => {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log(`App running on http://localhost:${port}`);
+  }
 });
