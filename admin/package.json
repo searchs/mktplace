@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "bson": ">=4.6.1",
-    "is-svg": ">=4.3.2",
+    "is-svg": ">=5.0.0",
     "mquery": ">=4.0.2"
   }
 }
