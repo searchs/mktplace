@@ -17,21 +17,21 @@
   "author": "Ola Ajibode",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.1079.0",
-    "body-parser": "^1.19.2",
-    "dotenv": "^16.0.0",
+    "aws-sdk": "^2.1495.0",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.3.1",
     "dotenv-parse-variables": "^2.0.0",
-    "express": "^4.17.3",
-    "mongoose": "^6.2.3",
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
     "morgan": "^1.10.0",
-    "mpath": ">=0.8.4",
+    "mpath": ">=0.9.0",
     "multer": "^1.4.4",
-    "multer-s3": "^2.10.0",
-    "nth-check": ">=2.0.1"
+    "multer-s3": "^3.0.1",
+    "nth-check": ">=2.1.1"
   },
   "devDependencies": {
-    "bson": ">=4.6.1",
-    "is-svg": ">=4.3.2",
-    "mquery": ">=4.0.2"
+    "bson": ">=6.2.0",
+    "is-svg": ">=5.0.0",
+    "mquery": ">=5.0.0"
   }
 }
